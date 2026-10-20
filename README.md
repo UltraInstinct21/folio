@@ -14,6 +14,11 @@ A minimal personal EPUB reader built with Tauri 2, vanilla JavaScript and foliat
 
 There is no sync, no search, no account, no cloud. That is intentional.
 
+## License
+
+MIT. The vendored `src/vendor/foliate-js` is MIT by John Factotum, its
+license file ships alongside the sources.
+
 ## Keyboard shortcuts
 
 | Key | Action |
