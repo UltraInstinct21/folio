@@ -29,3 +29,6 @@ src-tauri/gen
 
 # internal design spec, not shipped
 design.md
+
+# personal agent tooling
+opencode.json
