@@ -1,4 +1,4 @@
-/* ereader — minimal personal epub reader (Tauri + foliate-js) */
+/* folio — minimal personal epub reader (Tauri + foliate-js) */
 
 // import view.js registers the <foliate-view> custom element
 import { makeBook } from './vendor/foliate-js/view.js'
@@ -39,14 +39,12 @@ const bytesCache = new Map() // key -> Blob for this session
 const coverCache = new Map() // path -> data URL
 
 // ---------------------------------------------------------------- helpers
-let persistTimer
-function persist (immediate = false) {
-  clearTimeout(persistTimer)
-  const write = () => invoke('save_library', { state: JSON.stringify(state) }).catch(console.error)
-  if (immediate) write()
-  else persistTimer = setTimeout(write, 400)
+// saves are tiny and immediate — no debounce to cut short at quit time
+let saveLocked = false // true while library.json (and its backup) is unreadable
+function persist () {
+  if (saveLocked) return
+  invoke('save_library', { state: JSON.stringify(state) }).catch(console.error)
 }
-window.addEventListener('pagehide', () => persist(true))
 
 let toastTimer
 function toast (msg, ms = 3200) {
@@ -71,9 +69,8 @@ function sortedBooks () {
   return state.books.slice().sort((a, b) => (b.opened || 0) - (a.opened || 0))
 }
 
-// read a book's bytes. dialog picks give real paths (read from disk);
-// imported drops were copied into the data dir at add time.
-// foliate-js needs a File (it checks `file.name`), not a bare Blob.
+// read a book's bytes from the data dir (all books are copied there at
+// import time). foliate-js needs a File (it checks `file.name`), so wrap.
 async function bytesFrom (path) {
   const data = await invoke('read_file', { path })
   return new File([data], path.split('/').pop() || 'book.epub', { type: 'application/epub+zip' })
@@ -112,19 +109,10 @@ function mimeOf (data) {
 }
 
 // ---------------------------------------------------------------- theming
-const THEMES = {
-  light: { 'ui-bg': '#f4f2ee', fg: '#1c1b1a', 'fg-dim': '#8a857c', line: '#e2ded6', accent: '#8c6d4f', card: '#ffffff', page: '#ffffff', 'page-fg': '#1c1b1a' },
-  sepia: { 'ui-bg': '#ece3d2', fg: '#3b332a', 'fg-dim': '#9a8d7a', line: '#ddd0ba', accent: '#a1743f', card: '#f6efe3', page: '#f6efe3', 'page-fg': '#3b332a' },
-  dark:  { 'ui-bg': '#0f1114', fg: '#d4d7dc', 'fg-dim': '#777c85', line: '#23262c', accent: '#b08d5f', card: '#171a1f', page: '#121519', 'page-fg': '#c9cdd4' },
-}
-
+// colors are single-sourced in styles.css html[data-theme] blocks
 function applyTheme (theme) {
   state.settings.theme = theme
   document.documentElement.dataset.theme = theme
-  // inline vars beat every stylesheet — app chrome repaints for sure
-  for (const [k, v] of Object.entries(THEMES[theme] || THEMES.sepia)) {
-    document.documentElement.style.setProperty('--' + k, v)
-  }
   for (const dot of document.querySelectorAll('.dot')) {
     dot.classList.toggle('active', dot.dataset.theme === theme)
   }
@@ -227,16 +215,21 @@ function bookCardEntry (book) {
   return card
 }
 
-// add and optionally open one book given a real path on disk
+// add and optionally open one book. `path` is already inside the data
+// dir except for drops, whose bytes arrive as the `data` argument.
 async function addBook (path, { openIt = true, data = null } = {}) {
   try {
     const key = fileKey(path)
     let blob = bytesCache.get(key)
-   	if (!blob) {
+    if (!blob) {
       if (data) {
-        // dropped file: copy into the data dir so it stays readable
+        // dropped file: write via the raw IPC channel — serialized as a
+        // JSON array of numbers, a 64 MB book stalls the whole app
         data = new Uint8Array(await data.arrayBuffer())
-        path = await invoke('import_book', { key, data: Array.from(data) })
+        const head = new TextEncoder().encode(key) // 16 hex chars — fileKey fixed length
+        const body = new Uint8Array(head.length + data.length)
+        body.set(head); body.set(data, head.length)
+        path = await invoke('import_book', body)
         blob = new File([data], path.split('/').pop(), { type: 'application/epub+zip' })
       } else {
         blob = await bytesFrom(path)
@@ -299,7 +292,7 @@ function closeReader () {
   els.settings.hidden = true
   renderLibrary()
   showView('library')
-  persist(true)
+  persist()
 }
 
 async function openBook (entry) {
@@ -331,7 +324,15 @@ async function openBook (entry) {
     view.addEventListener('show-annotation', onShowAnnotation)
     view.addEventListener('load', e => {
       const { doc, index } = e.detail
-      docIndexMap.set(doc, index)
+      // the sandbox keeps allow-scripts (WebKit bug 218086 breaks iframe
+      // events without it), so scripts are removed from the section doc
+      // instead: book JS must never reach `invoke` in the same origin
+      doc.querySelectorAll('script').forEach(n => n.remove())
+      for (const el of doc.querySelectorAll('*')) {
+        for (const a of [...el.attributes]) {
+          if (a.name.startsWith('on')) el.removeAttribute(a.name)
+        }
+      }
       doc.addEventListener('click', docClick)
       doc.addEventListener('pointerup', e => onSelection(e, doc, index))
       // redraw saved highlights for this section
@@ -360,7 +361,7 @@ function onRelocate ({ detail }) {
     if (currentBookEntry) {
       currentBookEntry.fraction = frac
       if (detail.cfi) currentBookEntry.cfi = detail.cfi
-      persist() // debounced
+      persist()
     }
   }
   const label = detail.tocItem?.label
@@ -387,7 +388,6 @@ function docClick (e) {
 const HIGHLIGHTS = Object.fromEntries(
   [...document.querySelectorAll('#selbar .swatch')].map(b => [b.dataset.c, b.style.getPropertyValue('--c')]))
 
-const docIndexMap = new WeakMap() // doc -> section index
 let pendingSel = null // { cfi, text } under the selection toolbar
 let pendingHl = null  // { cfi } currently targeted by the remove bar
 let selRangeRect = null
@@ -454,7 +454,10 @@ $('#hl-close').addEventListener('click', hideSelTool)
 function onShowAnnotation ({ detail }) {
   if (!view || !currentBookEntry) return
   pendingHl = { cfi: detail.value }
-  const doc = view.renderer.getContents()[0]?.doc
+  // locate the frame the highlight lives in — not just the first section
+  const contents = view.renderer.getContents()
+  const doc = contents.find(c => c.doc === detail.range?.startContainer?.ownerDocument)?.doc
+    ?? contents[0]?.doc
   const frameRect = doc?.defaultView?.frameElement?.getBoundingClientRect()
   let r
   try { r = detail.range.getBoundingClientRect() } catch { r = null }
@@ -481,7 +484,6 @@ $('#hl-del').addEventListener('click', () => {
 })
 
 // hide toolbars when paging / leaving the book
-const relocateAlsoHide = () => hideSelTool()
 
 // mouse wheel turns pages — one tick, one page (with a short lockout)
 let wheelLock = false
@@ -525,7 +527,12 @@ $('#btn-open').addEventListener('click', async () => {
       multiple: false,
       filters: [{ name: 'EPUB', extensions: ['epub'] }],
     })
-    if (path) addBook(path)
+    if (path) {
+      // copy the picked book into the data dir so it stays readable even
+      // if the original file is later moved or deleted
+      const local = await invoke('import_from_path', { key: fileKey(path), path })
+      addBook(local)
+    }
   } catch (e) {
     console.error(e)
     toast('Dialog failed: ' + (e?.message ?? String(e)))
@@ -609,16 +616,39 @@ function bindDrag () {
 }
 
 // ---------------------------------------------------------------- boot
-async function boot () {
-  const raw = await invoke('load_library')
-  const parsed = JSON.parse(raw || '{}')
+function takeState (obj) {
   state = {
-    settings: { fontSize: 20, theme: 'sepia', ...parsed.settings },
-    books: Array.isArray(parsed.books) ? parsed.books : [],
+    settings: { fontSize: 20, theme: 'sepia', ...obj.settings },
+    books: Array.isArray(obj.books) ? obj.books : [],
   }
   // clean author strings saved by older versions
   for (const b of state.books) {
     if ((b.author || '').toLowerCase() === 'unknown') b.author = ''
+  }
+  return state
+}
+
+async function boot () {
+  const info = JSON.parse(await invoke('load_library')) // { dir, state }
+  let obj = null
+  try { obj = JSON.parse(info.state || '{}') } catch { obj = null }
+  if (!obj) {
+    // main file unreadable: try the rotating backup kept before every save
+    const raw = await invoke('read_file', { path: info.dir + '/library.json.bak' })
+      .then(b => new TextDecoder().decode(b))
+      .catch(() => null)
+    obj = raw ? (() => { try { return JSON.parse(raw) } catch { return null } })() : null
+    if (obj) {
+      takeState(obj)
+      persist() // heal the main file from the backup immediately
+      toast('Library was damaged; restored from backup')
+    } else {
+      takeState({}) // degenerate in-memory state; refuse to overwrite the files
+      saveLocked = true
+      toast('Library file unreadable; changes will not be saved this session')
+    }
+  } else {
+    takeState(obj)
   }
   applyTheme(state.settings.theme)
   applyFontSize()

@@ -93,7 +93,7 @@ over automatically on first run. Delete the folder to reset the app.
 ```
 src/                  frontend, plain HTML/CSS/JS, no build step
 src/vendor/           vendored foliate-js and the style sheets polyfill
-src-tauri/            Rust shell, 5 small commands, no other logic
+src-tauri/            Rust shell, 6 small commands, no other logic
 .github/workflows/    CI builds for all three platforms
 ```
 
