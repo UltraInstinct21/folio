@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en" data-theme="sepia">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ereader</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+
+  <!-- ================= Library ================= -->
+  <section id="library" class="view">
+    <header class="lib-bar">
+      <span class="brand">folio</span>
+      <button id="btn-open" class="btn-accent">Open book</button>
+    </header>
+
+    <main id="grid" class="grid"></main>
+
+    <div id="empty" class="empty" hidden>
+      <div class="empty-box">
+        <p>No books yet.</p>
+        <p class="muted">Open an .epub or drop one here.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Reader ================= -->
+  <section id="reader" class="view" hidden>
+    <header class="rd-bar">
+      <button id="btn-back" class="btn-ghost" title="Back to library (Esc)">←</button>
+      <div class="rd-title">
+        <span id="rd-title-text"></span>
+        <span id="rd-author" class="muted"></span>
+      </div>
+      <span id="rd-percent" class="m"></span>
+      <button id="btn-toc" class="btn-ghost" title="Contents (T)">☰</button>
+      <button id="btn-settings" class="btn-ghost" title="Settings">Aa</button>
+    </header>
+
+    <div id="rd-body" class="rd-body">
+      <div id="pages"></div>
+      <div id="zone-left" class="zone zone-left" title="Previous page"></div>
+      <div id="zone-right" class="zone zone-right" title="Next page"></div>
+    </div>
+    <div id="progress-line"><div id="progress-fill"></div></div>
+
+    <!-- contents panel -->
+    <nav id="toc" class="toc" hidden>
+      <div class="toc-head">Contents</div>
+      <div id="toc-list" class="toc-list"></div>
+    </nav>
+
+    <!-- settings popover -->
+    <div id="settings" class="settings" hidden>
+      <div class="row">
+        <span>Size</span>
+        <button id="font-down" class="btn-ghost small" title="Smaller">A−</button>
+        <button id="font-up" class="btn-ghost small" title="Larger">A+</button>
+      </div>
+      <div class="row">
+        <span>Theme</span>
+        <button class="dot theme-light" data-theme="light"></button>
+        <button class="dot theme-sepia" data-theme="sepia"></button>
+        <button class="dot theme-dark" data-theme="dark"></button>
+      </div>
+    </div>
+
+    <!-- selection / highlight toolbar -->
+    <div id="selbar" class="selbar" hidden>
+      <button class="swatch" data-c="amber"  style="--c:#e6b450" title="Highlight amber"></button>
+      <button class="swatch" data-c="green"  style="--c:#79c07f" title="Highlight green"></button>
+      <button class="swatch" data-c="blue"   style="--c:#7ba7d9" title="Highlight blue"></button>
+      <button class="swatch" data-c="pink"   style="--c:#e087a8" title="Highlight pink"></button>
+      <button id="sel-copy" class="sm">Copy</button>
+      <button id="sel-close" class="sm">✕</button>
+    </div>
+    <div id="hlbar" class="selbar" hidden>
+      <button id="hl-del" class="sm">Remove</button>
+      <button id="hl-close" class="sm">✕</button>
+    </div>
+
+    <div id="drop-overlay" hidden><div class="drop-box">Drop to open</div></div>
+  </section>
+
+  <div id="toast" hidden></div>
+</body>
+</html>
