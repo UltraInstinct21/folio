@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>folio — a tiny epub reader</title>
+  <meta name="description" content="folio is a minimal epub reader for linux, windows and macos. one 5 mb binary, no accounts, no cloud, just reading." />
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="wrap site-head">
+    <a class="mark" href="#top" aria-label="folio home">
+      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="4" y="3" width="24" height="26" rx="5" fill="#171717"/>
+        <rect x="9" y="7" width="14" height="18" rx="2.5" fill="#fdfbf9"/>
+        <path d="M9 7 h7 v18 h-7 z" fill="#ff6f1e" opacity="0.9"/>
+        <path d="M18 7 l5 4 v14 h-5 z" fill="#f7efe9"/>
+      </svg>
+      folio
+    </a>
+    <nav>
+      <a class="skip" href="https://github.com/UltraInstinct21/folio">the code</a>
+      <a class="pill" href="https://github.com/UltraInstinct21/folio/releases">get folio</a>
+    </nav>
+  </header>
+
+  <main id="top">
+
+    <!-- hero -->
+    <section class="wrap hero">
+      <div class="hero-copy">
+        <span class="caption">dear bookworms,</span>
+        <h1 class="display">meet folio</h1>
+        <p class="lede">
+          A minimal epub reader for people who just want to sit down and
+          read. <em class="hl">actually</em> 5 mb, no accounts, no cloud,
+          no nonsense.
+        </p>
+        <a class="pill" href="https://github.com/UltraInstinct21/folio/releases">download it free</a>
+        <p class="note">windows, macos and linux. installers on the releases page.</p>
+      </div>
+
+      <div class="hero-art">
+        <div class="book">
+          <div class="book-pages">
+            <div class="line"></div>
+            <div class="line w80"></div>
+            <div class="line w60"></div>
+            <div class="line orange"></div>
+          </div>
+          <div class="book-strip">
+            <span class="nub"></span>
+            <span>chapter three · page 148 of 512</span>
+          </div>
+        </div>
+
+        <div class="label">
+          <div class="field"><small>name</small><b>folio</b></div>
+          <div class="field"><small>class</small><b>epub reader</b></div>
+          <div class="field"><small>roll no.</small><b>v0.1.2</b></div>
+        </div>
+
+        <!-- stickers -->
+        <span class="sticker s-bolt" aria-hidden="true">
+          <svg viewBox="0 0 48 48"><path d="M27 4 L12 27 h9 L20 44 L36 19 h-10 z" fill="#3b82f6" stroke="#171717" stroke-width="2" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="sticker s-heart" aria-hidden="true">
+          <svg viewBox="0 0 48 48"><path d="M24 42 C10 30 6 22 10 14 c3-6 12-6 14 1 2-7 11-7 14-1 4 8 0 16-14 28 z" fill="#ff66cf" stroke="#171717" stroke-width="2" stroke-linejoin="round"/><circle cx="19" cy="20" r="2" fill="#171717"/><circle cx="29" cy="20" r="2" fill="#171717"/></svg>
+        </span>
+        <span class="sticker s-ghost" aria-hidden="true">
+          <svg viewBox="0 0 44 44"><path d="M22 6 c-9 0-13 7-13 15 v16 l4-3 4 3 5-3 5 3 4-3 4 3 V21 c0-8-4-15-13-15 z" fill="#fdfbf9" stroke="#171717" stroke-width="2" stroke-linejoin="round"/><circle cx="18" cy="20" r="2" fill="#171717"/><circle cx="26" cy="20" r="2" fill="#171717"/></svg>
+        </span>
+        <span class="sticker s-spark" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M16 2 v10 M16 20 v10 M2 16 h10 M20 16 h10 M7 7 l7 7 M18 18 l7 7 M25 7 l-7 7 M14 18 l-7 7" stroke="#ff6f1e" stroke-width="2.5" stroke-linecap="round"/></svg>
+        </span>
+      </div>
+    </section>
+
+    <!-- features -->
+    <section id="why" class="wrap features">
+      <span class="caption">the whole point,</span>
+      <h2 class="h2">small on purpose</h2>
+      <p class="section-copy">
+        folio keeps every feature you need for a nice reading session and
+        leaves out everything else. no services, no update daemons, no
+        background jobs of any kind.
+      </p>
+
+      <div class="cards">
+        <div class="card">
+          <span class="num">2mb</span>
+          <h3>takes almost no room</h3>
+          <p>the linux installer is about 2 mb and the binary is 5 mb. small enough to run from a usb stick or keep every release around forever.</p>
+        </div>
+        <div class="card">
+          <span class="num">0&#8202;cloud</span>
+          <h3>no accounts, no sync</h3>
+          <p>your library never leaves the machine. there is nothing to log into and nothing to leak.</p>
+        </div>
+        <div class="card">
+          <span class="num">json</span>
+          <h3>readable state</h3>
+          <p>your whole library is one json file you can open, back up or diff. covers and books sit next to it. delete the folder to reset.</p>
+        </div>
+        <div class="card">
+          <span class="num">fast</span>
+          <h3>opens instantly</h3>
+          <p>no framework, no bundler, no runtime beyond the system webview. the frontend is a handful of plain html, css and js files.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- reading experience -->
+    <section id="reading" class="wrap features">
+      <span class="caption">and inside,</span>
+      <h2 class="h2">a quiet reading room</h2>
+      <p class="section-copy">
+        paginated pages that turn with a click, the arrow keys, space or the
+        mouse wheel. resume exactly where you left off. pick a theme, pick a
+        font size, read at night without burning your eyes.
+      </p>
+
+      <div class="cards">
+        <div class="card">
+          <span class="num">&#10022;</span>
+          <h3>four highlight colors</h3>
+          <p>select text to highlight in one of four colors or copy it. click a highlight later to remove it.</p>
+        </div>
+        <div class="card">
+          <span class="num">&#8801;</span>
+          <h3>table of contents</h3>
+          <p>one key opens the contents panel. jump to any chapter, close it, keep reading.</p>
+        </div>
+        <div class="card">
+          <span class="num">&#9681;</span>
+          <h3>three themes</h3>
+          <p>light, sepia and dark, applied live to every last margin of the page. no stale corners left behind.</p>
+        </div>
+        <div class="card">
+          <span class="num">&#8635;</span>
+          <h3>picks up where you left</h3>
+          <p>every book remembers its page. drop epubs straight onto the window or use the picker.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- install -->
+    <section id="install" class="wrap install">
+      <span class="caption">take one,</span>
+      <h2 class="h2">pick your parcel</h2>
+      <p class="section-copy">
+        every release ships installers for all three platforms, built by a
+        two command github actions workflow. grab yours from the releases page.
+      </p>
+
+      <div class="plats">
+        <div class="plat">
+          <h3>debian, ubuntu</h3>
+          <p>the .deb, about 2 mb.</p>
+          <a class="pill" href="https://github.com/UltraInstinct21/folio/releases/latest">get the .deb</a>
+        </div>
+        <div class="plat">
+          <h3>windows, macos</h3>
+          <p>msi, nsis and dmg, signed by nothing.</p>
+          <a class="pill" href="https://github.com/UltraInstinct21/folio/releases/latest">get installers</a>
+        </div>
+        <div class="plat">
+          <h3>any linux</h3>
+          <p>one appimage, runs as is.</p>
+          <a class="pill" href="https://github.com/UltraInstinct21/folio/releases/latest">get the appimage</a>
+        </div>
+      </div>
+      <p class="fine">
+        <b>a polite note:</b> the binaries are unsigned, so windows may ask
+        for "more info, run anyway" and macos may want you to approve the
+        app after the first open.
+      </p>
+    </section>
+
+    <!-- repo cta -->
+    <section id="source" class="wrap repo">
+      <div class="repo-inner">
+        <span class="caption">curious?</span>
+        <h2 class="h2">the whole thing is on github</h2>
+        <p>
+          mit licensed, readable in an afternoon. a tauri 2 rust shell with
+          five small commands, a plain vanilla frontend and the vendored
+          foliate-js engine. star it if it reads well for you.
+        </p>
+        <a class="pill" href="https://github.com/UltraInstinct21/folio">read the source</a>
+
+        <span class="sticker s-bolt" aria-hidden="true">
+          <svg viewBox="0 0 48 48"><path d="M27 4 L12 27 h9 L20 44 L36 19 h-10 z" fill="#3b82f6" stroke="#171717" stroke-width="2" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="sticker s-ghost" aria-hidden="true">
+          <svg viewBox="0 0 44 44"><path d="M22 6 c-9 0-13 7-13 15 v16 l4-3 4 3 5-3 5 3 4-3 4 3 V21 c0-8-4-15-13-15 z" fill="#fdfbf9" stroke="#171717" stroke-width="2" stroke-linejoin="round"/></svg>
+        </span>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="band">
+    <div class="wrap">
+      <div class="band-inner">
+        <p class="slogan">made for reading, nothing else.</p>
+        <div class="band-links">
+          <a href="https://github.com/UltraInstinct21/folio">github</a>
+          <a href="https://github.com/UltraInstinct21/folio/releases">releases</a>
+          <a href="https://github.com/UltraInstinct21/folio/blob/main/LICENSE">mit license</a>
+        </div>
+      </div>
+      <p class="band-fine">built with tauri 2, foliate-js and a lot of stubborn opinions about size.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

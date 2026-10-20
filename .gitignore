@@ -26,3 +26,6 @@ src-tauri/gen
 *.njsproj
 *.sln
 *.sw?
+
+# internal design spec, not shipped
+design.md
