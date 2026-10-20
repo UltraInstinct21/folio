@@ -10,9 +10,44 @@ fn data_dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
     Ok(dir)
 }
 
+/// Older builds stored data under a personal identifier. On first run,
+/// move that folder's contents into the new app.folio location so no
+/// reader loses their library.
+fn migrate_legacy (dir: &std::path::Path) {
+    let has_state = dir.join("library.json").exists();
+    if has_state {
+        return;
+    }
+    let Some(parent) = dir.parent() else { return };
+    let legacy_names = ["dev.sarthi.ereader", "dev.sarthi.folio"];
+    for name in legacy_names {
+        let old = parent.join(name);
+        if old.join("library.json").exists() {
+            copy_tree(&old, dir);
+            return;
+        }
+    }
+}
+
+fn copy_tree(from: &std::path::Path, to: &std::path::Path) {
+    let Ok(entries) = fs::read_dir(from) else { return };
+    for entry in entries.flatten() {
+        let src = entry.path();
+        let dst = to.join(entry.file_name());
+        if src.is_dir() {
+            if fs::create_dir_all(&dst).is_ok() {
+                copy_tree(&src, &dst);
+            }
+        } else if let Err(e) = fs::copy(&src, &dst) {
+            eprintln!("migrate {src:?}: {e}");
+        }
+    }
+}
+
 #[tauri::command]
 fn load_library(app: tauri::AppHandle) -> Result<String, String> {
     let dir = data_dir(&app)?;
+    migrate_legacy(&dir);
     let path = dir.join("library.json");
     match fs::read_to_string(&path) {
         Ok(s) => Ok(s),

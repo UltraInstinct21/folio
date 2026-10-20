@@ -81,11 +81,12 @@ Click a highlight to remove it. Mouse wheel also turns pages.
 
 One JSON file plus thumbnails and imported books:
 
-- Linux: `~/.local/share/dev.sarthi.ereader/`
-- Windows: `%APPDATA%/dev.sarthi.ereader/`
-- macOS: `~/Library/Application Support/dev.sarthi.ereader/`
+- Linux: `~/.local/share/app.folio/`
+- Windows: `%APPDATA%/app.folio/`
+- macOS: `~/Library/Application Support/app.folio/`
 
-Delete the folder to reset the app.
+Older folio versions used a personal folder name; data there is moved
+over automatically on first run. Delete the folder to reset the app.
 
 ## Project layout
 
