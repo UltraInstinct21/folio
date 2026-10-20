@@ -1,4 +1,4 @@
-/* folio landing page — follows design.md (Superr-derived spec) */
+/* folio landing page, follows design.md (Superr derived spec) */
 
 :root {
   --color-cream-paper: #fdfbf9;
@@ -68,6 +68,7 @@ a { color: inherit; }
 }
 
 .mark svg { display: block; }
+.mark img { display: block; border-radius: 8px; }
 
 .site-head nav { display: flex; gap: 16px; align-items: center; }
 
@@ -272,16 +273,11 @@ a { color: inherit; }
 }
 
 .card {
-  background: #fff;
-  border: 1.5px solid var(--color-charcoal);
-  border-radius: var(--radius-cards);
-  padding: 24px;
-  box-shadow: var(--shadow-lg);
-  position: relative;
+  padding: 0;
 }
 
 .card h3 {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 24px;
   line-height: 1.4;
   font-weight: 500;
@@ -296,7 +292,7 @@ a { color: inherit; }
   justify-content: center;
   min-width: 40px;
   padding: 6px 12px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   border: 2px solid var(--color-charcoal);
   border-radius: 20px;
   font-size: 16px;
@@ -307,7 +303,7 @@ a { color: inherit; }
 .card:nth-child(1) .num { background: var(--color-sky-sticker); }
 .card:nth-child(2) .num { background: var(--color-bubblegum-sticker); }
 .card:nth-child(3) .num { background: var(--color-sprout-sticker); transform: rotate(-4deg); }
-.card:nth-child(4) .num { background: var(--color-marker-orange); }
+.card:nth-child(4) .num { background: var(--color-marker-orange); transform: rotate(3deg); }
 
 /* install rows */
 
