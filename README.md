@@ -1,83 +1,102 @@
 # folio
 
-A minimal personal EPUB reader built with Tauri 2, vanilla JavaScript and foliate-js.
+A minimal, fast EPUB reader for people who just want to sit down and read.
+Built with Tauri 2 and vanilla JavaScript, rendered by foliate-js.
+
+No sync. No accounts. No cloud. Your library is a JSON file on your disk.
 
 ## Features
 
-- Library view with covers, author names and reading progress
-- Paginated reader with page turning by click, keyboard or mouse wheel
-- Resume where you left off, per book
+- Library shelf with covers, authors and reading progress
+- Paginated reader: turn pages by clicking the page edges, arrow keys,
+  space bar, or the mouse wheel
+- Resume every book exactly where you left off
 - Table of contents panel
-- Text selection toolbar: 4 highlight colors, copy, remove
+- Highlighting: select text and pick one of four colors, or copy it;
+  click any highlight later to remove it
 - Font size control and three themes: light, sepia, dark
-- Open books with the file picker or drag and drop
+- Open books with the file picker, or drop EPUB files on the window
 
-There is no sync, no search, no account, no cloud. That is intentional.
+### Small on purpose
 
-## License
+- The Linux installer is about 2 MB and the standalone binary is 5 MB,
+  which is small enough to keep multiple releases around or run it from
+  a USB stick
+- No framework, no bundler, no runtime beyond the system webview: the
+  whole frontend is a handful of plain HTML/CSS/JS files, so cold start
+  is near instant
+- Library state is a single readable JSON file, not a database; you can
+  open it, back it up, or diff it
+- It does one thing and therefore stays light: no services, no update
+  daemons, no background tasks of any kind
 
-MIT. The vendored `src/vendor/foliate-js` is MIT by John Factotum, its
-license file ships alongside the sources.
+## Installing
 
-## Keyboard shortcuts
+Grab the installer for your platform from the
+[Releases page](../../releases) and install it:
 
-| Key | Action |
+| Platform | File |
 | --- | --- |
-| Left / Right, Space | Turn page |
-| T | Table of contents |
-| Esc | Close panel, then leave reader |
-| Home | Jump to start |
+| Windows 64 bit | `.msi` or `-setup.exe` from the release |
+| macOS Apple Silicon | `aarch64.dmg` |
+| macOS Intel | `x64.dmg` |
+| Debian / Ubuntu | `.deb` |
+| Fedora / openSUSE | `.rpm` |
+| Any Linux | `.AppImage` |
 
-## Run in dev
+The binaries are unsigned, so expect one polite warning per platform:
+Windows SmartScreen asks you to confirm with More info then Run anyway;
+macOS Gatekeeper asks to approve the app after the first open.
+
+## Building from source
+
+Requirements: Node.js 20+, Rust 1.77+, and the platform dependencies
+listed in the
+[Tauri guide](https://v2.tauri.app/start/prerequisites/).
 
 ```
 npm install
-npm run tauri dev
+npm run tauri dev      # run in development
+npm run tauri build    # produce installers for your platform
 ```
 
-## Build for Linux
+Cross compiling is not supported, so Windows and macOS installers are
+built by the included GitHub Actions workflow whenever a `v*` tag is
+pushed. A draft release with all platform installers appears
+automatically.
 
-```
-npm run tauri build
-```
+## Usage
 
-Produces:
+| Key | Action |
+| --- | --- |
+| Left, Right, Space | Turn page |
+| T | Table of contents |
+| Esc | Close panel, then leave the reader |
+| Home | Jump to the start |
 
-- `src-tauri/target/release/bundle/deb/folio_*.deb` (installs to the app menu)
-- `src-tauri/target/release/bundle/appimage/folio_*.AppImage` (run anywhere)
+Select text inside a book to highlight it in four colors or copy it.
+Click a highlight to remove it. Mouse wheel also turns pages.
 
-A bare 5 MB binary is also produced at `src-tauri/target/release/folio`.
+## Where your data lives
 
-## Windows and macOS
-
-Cross compiling from Linux is not supported by Tauri, so macOS and Windows
-installers are produced automatically by GitHub Actions:
-
-1. Push this repository to GitHub.
-2. Push a tag: `git tag v0.1.0 && git push origin v0.1.0`.
-3. The workflow in `.github/workflows/build.yml` builds:
-   - Windows: NSIS installer (`.exe`) and MSI
-   - macOS: `.app` and `.dmg` for both Apple Silicon and Intel
-   - Linux: deb and AppImage
-4. A draft GitHub release appears containing all installers. Publish it or
-   download the artifacts directly.
-
-## Data
-
-Library state, covers and imported books live in the system app data dir:
+One JSON file plus thumbnails and imported books:
 
 - Linux: `~/.local/share/dev.sarthi.ereader/`
 - Windows: `%APPDATA%/dev.sarthi.ereader/`
 - macOS: `~/Library/Application Support/dev.sarthi.ereader/`
 
-Delete that folder for a hard reset.
+Delete the folder to reset the app.
 
-## Layout
+## Project layout
 
 ```
-src/                 frontend, plain HTML/CSS/JS, no build step
-src/vendor/          vendored foliate-js and style sheets polyfill (MIT)
-src-tauri/           Rust shell, 5 commands: load_library, save_library,
-                     read_file, import_book, save_cover
-.github/workflows/   CI builds for all three platforms
+src/                  frontend, plain HTML/CSS/JS, no build step
+src/vendor/           vendored foliate-js and the style sheets polyfill
+src-tauri/            Rust shell, 5 small commands, no other logic
+.github/workflows/    CI builds for all three platforms
 ```
+
+## License
+
+MIT. The vendored foliate-js is MIT by John Factotum and keeps its own
+license file in `src/vendor/foliate-js/LICENSE`.

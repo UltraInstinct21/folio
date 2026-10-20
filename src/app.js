@@ -179,7 +179,13 @@ function contentCSS () {
 }
 
 function applyContentStyles () {
-  if (view?.renderer) view.renderer.setStyles?.(contentCSS())
+  const r = view?.renderer
+  if (!r) return
+  // the paginator caches the doc background captured at section load;
+  // refresh it, or the underlay keeps the old theme until relaunch
+  r.docBackground = getComputedStyle(document.documentElement)
+    .getPropertyValue('--page').trim()
+  r.setStyles?.(contentCSS())
 }
 
 // ---------------------------------------------------------------- library
@@ -244,7 +250,8 @@ async function addBook (path, { openIt = true, data = null } = {}) {
     const entry = state.books.find(b => b.key === key) || { key, path }
     entry.path = path
     entry.title = typeof meta.title === 'string' ? meta.title : ''
-    entry.author = typeof meta.author === 'string' ? meta.author : ''
+    const rawAuthor = typeof meta.author === 'string' ? meta.author : ''
+    entry.author = rawAuthor && rawAuthor.toLowerCase() !== 'unknown' ? rawAuthor : ''
     entry.opened = entry.opened || Date.now()
 
     if (!entry.cover && book.getCover) {
@@ -608,6 +615,10 @@ async function boot () {
   state = {
     settings: { fontSize: 20, theme: 'sepia', ...parsed.settings },
     books: Array.isArray(parsed.books) ? parsed.books : [],
+  }
+  // clean author strings saved by older versions
+  for (const b of state.books) {
+    if ((b.author || '').toLowerCase() === 'unknown') b.author = ''
   }
   applyTheme(state.settings.theme)
   applyFontSize()
