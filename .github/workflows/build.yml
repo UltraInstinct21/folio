@@ -17,9 +17,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: create the shared draft release
         run: >
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+          echo "reusing existing draft for $GITHUB_REF_NAME";
+          else
           gh release create "$GITHUB_REF_NAME" --draft
           --title "folio v${GITHUB_REF_NAME#v}"
-          --notes "Installers for Linux, Windows and macOS."
+          --notes "Installers for Linux, Windows and macOS.";
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
