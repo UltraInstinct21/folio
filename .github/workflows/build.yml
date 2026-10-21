@@ -55,7 +55,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: folio-v__VERSION__
+          tagName: __VERSION__
           releaseName: "folio v__VERSION__"
           releaseBody: "Draft release: installers for Linux, Windows and macOS."
           releaseDraft: true
