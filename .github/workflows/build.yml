@@ -7,7 +7,24 @@ on:
   workflow_dispatch:
 
 jobs:
+  # all four build jobs run in parallel; without a pre-existing draft each
+  # one races to create it and you get duplicate draft releases
+  draft:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: create the shared draft release
+        run: >
+          gh release create "$GITHUB_REF_NAME" --draft
+          --title "folio v${GITHUB_REF_NAME#v}"
+          --notes "Installers for Linux, Windows and macOS."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build:
+    needs: draft
     permissions:
       contents: write
     strategy:

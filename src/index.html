@@ -35,6 +35,8 @@
         <span id="rd-author" class="muted"></span>
       </div>
       <span id="rd-percent" class="m"></span>
+      <button id="btn-search" class="btn-ghost" title="Search in book (/)">/</button>
+      <button id="btn-bm" class="btn-ghost" title="Bookmarks (B adds one)">⚑</button>
       <button id="btn-toc" class="btn-ghost" title="Contents (T)">☰</button>
       <button id="btn-settings" class="btn-ghost" title="Settings">Aa</button>
     </header>
@@ -50,6 +52,18 @@
     <nav id="toc" class="toc" hidden>
       <div class="toc-head">Contents</div>
       <div id="toc-list" class="toc-list"></div>
+    </nav>
+
+    <!-- search panel -->
+    <nav id="search" class="toc" hidden>
+      <div class="toc-head"><input id="search-input" placeholder="Search in book" autocomplete="off" spellcheck="false" /></div>
+      <div id="search-list" class="toc-list"></div>
+    </nav>
+
+    <!-- bookmarks panel -->
+    <nav id="bm" class="toc" hidden>
+      <div class="toc-head">Bookmarks</div>
+      <div id="bm-list" class="toc-list"></div>
     </nav>
 
     <!-- settings popover -->
