@@ -14,11 +14,12 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: create the shared draft release
         run: >
-          gh release create "$GITHUB_REF_NAME" --draft
+          gh release create "folio-$GITHUB_REF_NAME" --draft
           --title "folio v${GITHUB_REF_NAME#v}"
-          --notes "Installers for Linux, Windows and macOS." || true
+          --notes "Installers for Linux, Windows and macOS."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
