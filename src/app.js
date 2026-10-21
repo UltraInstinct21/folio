@@ -9,6 +9,7 @@ import { Overlayer } from './vendor/foliate-js/overlayer.js'
 import './vendor/foliate-js/epub.js'
 import './vendor/foliate-js/paginator.js'
 import './vendor/foliate-js/fixed-layout.js'
+import './vendor/foliate-js/search.js' // view.search imports it dynamically
 import './vendor/foliate-js/vendor/zip.js'
 
 // ---------------------------------------------------------------- tauri
@@ -22,6 +23,8 @@ const els = {
   title: $('#rd-title-text'), author: $('#rd-author'), percent: $('#rd-percent'),
   fill: $('#progress-fill'),
   toc: $('#toc'), tocList: $('#toc-list'),
+  search: $('#search'), searchInput: $('#search-input'), searchList: $('#search-list'),
+  bm: $('#bm'), bmList: $('#bm-list'),
   settings: $('#settings'),
   drop: $('#drop-overlay'),
   toast: $('#toast'),
@@ -169,8 +172,9 @@ function contentCSS () {
 function applyContentStyles () {
   const r = view?.renderer
   if (!r) return
-  // the paginator caches the doc background captured at section load;
-  // refresh it, or the underlay keeps the old theme until relaunch
+  // the paginator paints its underlay from the doc background captured at
+  // section load; the forwarded setter (see paginator.js) makes this write
+  // reach it, and setStyles below triggers the repaint
   r.docBackground = getComputedStyle(document.documentElement)
     .getPropertyValue('--page').trim()
   r.setStyles?.(contentCSS())
@@ -287,9 +291,13 @@ function closeReaderSilent () {
 function closeReader () {
   closeReaderSilent()
   currentBookEntry = null
+  currentChapter = ''
+  resetSearch() // invalidate any in-flight search for the dead book
   hideSelTool()
   els.toc.hidden = true
   els.settings.hidden = true
+  els.search.hidden = true
+  els.bm.hidden = true
   renderLibrary()
   showView('library')
   persist()
@@ -304,6 +312,9 @@ async function openBook (entry) {
   els.title.textContent = entry.title || entry.path?.split('/').pop() || '?'
   els.author.textContent = entry.author ? '· ' + entry.author : ''
   els.percent.textContent = ''
+  currentChapter = ''
+  els.toc.hidden = els.settings.hidden = els.search.hidden = els.bm.hidden = true
+  for (const li of els.tocList.children) li.classList.remove('active')
   showView('reader')
 
   try {
@@ -335,6 +346,10 @@ async function openBook (entry) {
       }
       doc.addEventListener('click', docClick)
       doc.addEventListener('pointerup', e => onSelection(e, doc, index))
+      doc.addEventListener('wheel', turnWithWheel, { passive: false })
+      // push the current theme into the underlay on every section load,
+      // not only on explicit theme switches
+      applyContentStyles()
       // redraw saved highlights for this section
       for (const h of (currentBookEntry?.highlights ?? [])) {
         view.addAnnotation({ value: h.cfi, color: h.color }).catch(() => {})
@@ -352,6 +367,7 @@ async function openBook (entry) {
   }
 }
 
+let currentChapter = ''
 function onRelocate ({ detail }) {
   hideSelTool()
   const frac = detail.fraction
@@ -365,8 +381,11 @@ function onRelocate ({ detail }) {
     }
   }
   const label = detail.tocItem?.label
-  if (label) for (const li of els.tocList.children) {
-    li.classList.toggle('active', li.textContent === label)
+  if (label) {
+    currentChapter = label
+    for (const li of els.tocList.children) {
+      li.classList.toggle('active', li.textContent === label)
+    }
   }
 }
 
@@ -483,21 +502,22 @@ $('#hl-del').addEventListener('click', () => {
   hideSelTool()
 })
 
-// hide toolbars when paging / leaving the book
-
-// mouse wheel turns pages — one tick, one page (with a short lockout)
+// page turns on wheel. events inside the book iframe never bubble out to
+// the parent document, so the same handler must live in both frames —
+// wheel over the page is otherwise dead (release builds included)
 let wheelLock = false
-els.rdBody.addEventListener('wheel', e => {
+const turnWithWheel = e => {
   if (!view) return
   if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
-  if (Math.abs(e.deltaY) < 12) { e.preventDefault(); return } // trackpad noise
   e.preventDefault()
+  if (Math.abs(e.deltaY) < 12) return // trackpad noise
   if (wheelLock) return
   wheelLock = true
   setTimeout(() => { wheelLock = false }, 240)
   if (e.deltaY > 0) view.next()
   else view.prev()
-}, { passive: false })
+}
+els.rdBody.addEventListener('wheel', turnWithWheel, { passive: false })
 
 // ---------------------------------------------------------------- toc
 function buildToc (toc) {
@@ -540,18 +560,39 @@ $('#btn-open').addEventListener('click', async () => {
 })
 
 $('#btn-back').addEventListener('click', closeReader)
-$('#btn-toc').addEventListener('click', () => {
-  els.settings.hidden = true
-  els.toc.hidden = !els.toc.hidden
+
+const PANELS = [
+  ['settings', '#settings, #btn-settings'],
+  ['toc', '#toc, #btn-toc'],
+  ['search', '#search, #btn-search'],
+  ['bm', '#bm, #btn-bm'],
+]
+
+function openPanel (name) {
+  for (const [n] of PANELS) if (n !== name) els[n].hidden = true
+  els[name].hidden = false
+}
+
+function closePanel (name) {
+  els[name].hidden = true
+  if (name === 'search') resetSearch()
+}
+
+$('#btn-toc').addEventListener('click', () => els.toc.hidden ? openPanel('toc') : closePanel('toc'))
+$('#btn-settings').addEventListener('click', () => els.settings.hidden ? openPanel('settings') : closePanel('settings'))
+$('#btn-search').addEventListener('click', () => {
+  if (els.search.hidden) { openPanel('search'); els.searchInput.focus(); els.searchInput.select() }
+  else closePanel('search')
 })
-$('#btn-settings').addEventListener('click', () => {
-  els.toc.hidden = true
-  els.settings.hidden = !els.settings.hidden
+$('#btn-bm').addEventListener('click', () => {
+  if (els.bm.hidden) { renderBookmarks(); openPanel('bm') }
+  else closePanel('bm')
 })
 
 document.addEventListener('click', e => {
-  if (!els.settings.hidden && !e.target.closest('#settings, #btn-settings')) els.settings.hidden = true
-  if (!els.toc.hidden && !e.target.closest('#toc, #btn-toc')) els.toc.hidden = true
+  for (const [n, sel] of PANELS) {
+    if (!els[n].hidden && !e.target.closest(sel)) closePanel(n)
+  }
 })
 
 $('#font-up').addEventListener('click', () => {
@@ -572,21 +613,175 @@ $('#zone-left').addEventListener('click', () => currentBookEntry && view?.prev()
 $('#zone-right').addEventListener('click', () => currentBookEntry && view?.next())
 
 document.addEventListener('keydown', e => {
+  // never treat typing as a shortcut (space would flip pages mid-search)
+  if (e.target.closest('input, textarea')) return
   if (!view) return
   switch (e.key) {
     case 'ArrowRight': case 'PageDown': case ' ': view?.next(); break
     case 'ArrowLeft': case 'PageUp': view?.prev(); break
     case 'Home': view?.goToFraction(0); break
+    case '/':
+      e.preventDefault()
+      openPanel('search')
+      els.searchInput.focus()
+      els.searchInput.select()
+      break
+    case 'b': case 'B': addBookmark(); break
     case 'Escape':
-      if (!els.toc.hidden) els.toc.hidden = true
+      if (!els.search.hidden) closePanel('search')
+      else if (!els.bm.hidden) closePanel('bm')
+      else if (!els.toc.hidden) els.toc.hidden = true
       else if (!els.settings.hidden) els.settings.hidden = true
       else closeReader()
       break
     case 't': case 'T':
-      if (e.target === document.body) { els.toc.hidden = !els.toc.hidden; els.settings.hidden = true }
+      els.toc.hidden ? openPanel('toc') : closePanel('toc')
       break
   }
 })
+
+// ---------------------------------------------------------------- search
+const MAX_RESULTS = 200
+let searchToken = 0
+let debounceTimer // search-as-you-type
+
+function resetSearch () {
+  searchToken++
+  els.searchInput.value = ''
+  els.searchList.replaceChildren()
+  try { view?.clearSearch() } catch {}
+}
+
+const emptyRow = text => {
+  const div = document.createElement('div')
+  div.className = 'bm-empty'
+  div.textContent = text
+  return div
+}
+
+function searchRow (cfi, excerpt) {
+  const b = document.createElement('button')
+  b.className = 'toc-item search-item'
+  const line = document.createElement('small')
+  const pre = excerpt?.pre ?? ''
+  const match = excerpt?.match ?? ''
+  const post = excerpt?.post ?? ''
+  line.append(pre)
+  if (match) {
+    const m = document.createElement('b')
+    m.textContent = match
+    line.append(m, post)
+  } else line.append(post)
+  b.append(line)
+  b.addEventListener('click', () => {
+    view?.goTo(cfi).catch(() => toast('Could not jump to that match'))
+    closePanel('search')
+  })
+  return b
+}
+
+async function runSearch (query) {
+  const token = ++searchToken
+  const book = view?.book
+  els.searchList.replaceChildren()
+  if (!view || !book || !query) {
+    try { view?.clearSearch() } catch {}
+    return
+  }
+  try {
+    let shown = 0
+    let truncated = false
+    for await (const r of view.search({ query })) {
+      if (token !== searchToken || view?.book !== book) return // stale run
+      if (r === 'done') break
+      if (r.subitems) {
+        if (r.label) {
+          const head = document.createElement('div')
+          head.className = 'sr-head'
+          head.textContent = r.label
+          els.searchList.append(head)
+        }
+        for (const { cfi, excerpt } of r.subitems) {
+          if (shown >= MAX_RESULTS) { truncated = true; break }
+          els.searchList.append(searchRow(cfi, excerpt))
+          shown++
+        }
+      } else if (r.cfi) {
+        if (shown >= MAX_RESULTS) { truncated = true; break }
+        els.searchList.append(searchRow(r.cfi, r.excerpt))
+        shown++
+      }
+      if (truncated) break
+    }
+    if (token !== searchToken || view?.book !== book) return
+    if (shown === 0) els.searchList.append(emptyRow('No matches'))
+    else if (truncated) els.searchList.append(emptyRow(`Showing the first ${shown} matches`))
+  } catch (e) { console.warn('search failed', e) }
+}
+
+els.searchInput.addEventListener('input', () => {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => runSearch(els.searchInput.value.trim()), 200)
+})
+els.searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closePanel('search'); els.searchInput.blur(); return }
+  if (e.key !== 'Enter') return
+  e.preventDefault()
+  clearTimeout(debounceTimer)
+  runSearch(els.searchInput.value.trim())
+})
+
+// ---------------------------------------------------------------- bookmarks
+function addBookmark () {
+  const entry = currentBookEntry
+  if (!view || !entry?.cfi) { toast('Nothing to bookmark yet'); return }
+  entry.bookmarks = entry.bookmarks || []
+  if (entry.bookmarks.some(x => x.cfi === entry.cfi)) {
+    toast('Already bookmarked here')
+    return
+  }
+  entry.bookmarks.push({
+    cfi: entry.cfi,
+    label: currentChapter || 'Page',
+    at: Math.round((entry.fraction || 0) * 100) + '%',
+  })
+  persist()
+  renderBookmarks()
+  toast('Bookmark added')
+}
+
+function renderBookmarks () {
+  const list = currentBookEntry?.bookmarks ?? []
+  els.bmList.replaceChildren()
+  if (!list.length) {
+    els.bmList.append(emptyRow('No bookmarks yet — press B to add one'))
+    return
+  }
+  for (const x of list) {
+    const row = document.createElement('div')
+    row.className = 'bm-row'
+    const jump = document.createElement('button')
+    jump.className = 'toc-item'
+    jump.textContent = `${x.label || 'Page'} · ${x.at || ''}`
+    jump.addEventListener('click', () => {
+      view?.goTo(x.cfi).catch(() => toast('Bookmark location unavailable'))
+      closePanel('bm')
+    })
+    const del = document.createElement('button')
+    del.className = 'bm-del'
+    del.textContent = '✕'
+    del.title = 'Remove bookmark'
+    del.addEventListener('click', () => {
+      const entry = currentBookEntry
+      if (!entry) return
+      entry.bookmarks = entry.bookmarks.filter(y => y !== x)
+      persist()
+      renderBookmarks()
+    })
+    row.append(jump, del)
+    els.bmList.append(row)
+  }
+}
 
 // drag & drop: native HTML5 events (works under Wayland/X11)
 function bindDrag () {
@@ -601,7 +796,7 @@ function bindDrag () {
   window.addEventListener('drop', async e => {
     e.preventDefault()
     overlay.hidden = true
-    const file = [...(e.dataTransfer?.files || [])].find(f => /\.(epub|fb2|mobi|azw3)$/i.test(f.name))
+    const file = [...(e.dataTransfer?.files || [])].find(f => /\.epub$/i.test(f.name))
     if (file) {
       try {
         await addBook(file.name, { data: file })
@@ -621,9 +816,11 @@ function takeState (obj) {
     settings: { fontSize: 20, theme: 'sepia', ...obj.settings },
     books: Array.isArray(obj.books) ? obj.books : [],
   }
-  // clean author strings saved by older versions
+  // normalize data saved by older versions or a damaged write
   for (const b of state.books) {
     if ((b.author || '').toLowerCase() === 'unknown') b.author = ''
+    if (!Array.isArray(b.highlights)) b.highlights = []
+    if (!Array.isArray(b.bookmarks)) b.bookmarks = []
   }
   return state
 }

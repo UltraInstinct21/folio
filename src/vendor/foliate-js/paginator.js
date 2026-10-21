@@ -668,6 +668,16 @@ export class Paginator extends HTMLElement {
         this.#container.append(this.#view.element)
         return this.#view
     }
+    // the app sets `renderer.docBackground` on theme switch; without this
+    // forwarding the assignment lands on a dead expando on the paginator
+    // element and the underlay keeps the previous theme's color until
+    // the section is reloaded
+    get docBackground() {
+        return this.#view?.docBackground
+    }
+    set docBackground(v) {
+        if (this.#view) this.#view.docBackground = v
+    }
     #replaceBackground(background, columnCount) {
         const doc = this.#view?.document
         if (!doc) return

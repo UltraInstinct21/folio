@@ -12,6 +12,8 @@ No sync. No accounts. No cloud. Your library is a JSON file on your disk.
   space bar, or the mouse wheel
 - Resume every book exactly where you left off
 - Table of contents panel
+- Search inside a book, with a preview list and jump-to-match
+- Bookmarks with a side panel; B adds one at the current spot
 - Highlighting: select text and pick one of four colors, or copy it;
   click any highlight later to remove it
 - Font size control and three themes: light, sepia, dark
@@ -75,7 +77,8 @@ automatically.
 | Home | Jump to the start |
 
 Select text inside a book to highlight it in four colors or copy it.
-Click a highlight to remove it. Mouse wheel also turns pages.
+Click a highlight to remove it. Mouse wheel and arrow keys turn pages.
+`/` opens in-book search and `b` bookmarks the current spot.
 
 ## Where your data lives
 
